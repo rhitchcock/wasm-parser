@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>WebAssembly</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    <style>
+      body {
+        padding-top: 20px;
+        padding-bottom: 20px;
+      }
+      label {
+        font-weight: normal !important;
+      }
+      .navbar {
+        margin-bottom: 20px;
+      }
+      .code {
+        padding: 5px;
+        font-family: "Courier New", "sans-serif";
+        width: 100%;
+        height: 300px;
+        overflow-y: scroll;
+        max-width: 100%;
+        resize: none;
+      }
+      .container {
+        width: 500px;
+      }
+      .btn {
+        margin-bottom: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <nav class="navbar navbar-default">
+        <div class="container-fluid">
+          <div class="navbar-header">
+            <span class="navbar-brand">WebAssembly</span>
+          </div>
+        </div>
+      </nav>
+      <div class="panel panel-default">
+        <div class="panel-body">
+          <div class="buttons">
+            <p>A simple proof of concept (POC) WebAssembly version 13 toolset written in JavaScript. Basically, it's an implementation of a small part of libwasm.js I wrote for fun. However, this implementation is incomplete and only lists a select few sections for now.</p>
+            <p>Either open a .wasm file or type the module bytes in here. E.g., <code>00 61 73 6D 0D 00 00 00 ...</code> An example .wasm has been provided below.</p>
+            <input id="open-file-input" type="file" style="display:none;">
+            <button class="btn btn-default yes" id="open-file-button">Open File</button>
+            <button class="btn btn-default yes" id="wast-button">wasm2wast</button>
+            <p class="hidden" id="byte-size">0 byte(s)</p>
+          </div>
+          <textarea class="code" id="code-section">0x00 0x61 0x73 0x6D 0x0D 0x00 0x00 0x00 0x01 0x07 0x01 0x60 0x02 0x7F 0x7F 0x01 0x7F 0x03 0x02 0x01 0x00 0x07 0x0A 0x01 0x06 0x61 0x64 0x64 0x54 0x77 0x6F 0x00 0x00 0x0A 0x09 0x01 0x07 0x00 0x20 0x00 0x20 0x01 0x6A 0x0B</textarea>
+        </div>
+      </div>
+    </div>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+    <script src="WasmTools.js"></script>
+    <script>
+      $('#open-file-input').change(function() {
+        var files = this.files;
+        if (files.length) {
+          if (window.File && window.FileReader && window.FileList && window.Blob) {
+            $('#open-file-button').prop('disabled', true);
+            var file = files[0];
+            $('#byte-size').text(file.size + ' byte(s)');
+            $('#byte-size').removeClass('hidden');
+            var reader = new FileReader();
+            reader.onload = function(e) {
+              $('#open-file-button').prop('disabled', false);
+              $('#open-file-input').val('');
+              $('#code-section').val(Array.apply([], new Uint8Array(e.target.result)).map(uint8 => WasmTools.formatUint8(uint8)).join(' '));
+            };
+            reader.readAsArrayBuffer(file);
+          } else {
+            alert('The File APIs are not fully supported in this browser.');
+          }
+        }
+      });
+      $('#open-file-button').click(function(e) {
+        $('#open-file-input').click();
+        e.preventDefault();
+      });
+      $('#wast-button').click(function() {
+        var bytes = new Uint8Array($('#code-section').val().split(' ').map(token => parseInt(token, 16)));
+        $('#code-section').val(WasmTools.disassemble(bytes).getSExpression());
+      });
+    </script>
+  </body>
+</html>
